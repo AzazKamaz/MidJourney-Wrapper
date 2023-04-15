@@ -38,7 +38,7 @@ async def mj_upscale(ctx, index: discord.Option(int), reset_target : discord.Opt
         await ctx.respond("Invalid argument, pick from 1 to 4")
         return
 
-    if Globals.targetID == "":
+    if Globals.targetID.get(ctx.author.id) is None:
         await ctx.respond(
             'You did not set target. To do so reply to targeted message with "$mj_target"'
         )
@@ -46,9 +46,9 @@ async def mj_upscale(ctx, index: discord.Option(int), reset_target : discord.Opt
 
     if (Globals.USE_MESSAGED_CHANNEL):
           Globals.CHANNEL_ID = ctx.channel.id
-    response = Upscale(index, Globals.targetID, Globals.targetHash)
+    response = Upscale(index, Globals.targetID.get(ctx.author.id), Globals.targetHash.get(ctx.author.id))
     if reset_target:
-        Globals.targetID = ""
+        Globals.targetID.pop(ctx.author.id)
     if response.status_code >= 400:
         await ctx.respond("Request has failed; please try later")
         return
@@ -57,7 +57,7 @@ async def mj_upscale(ctx, index: discord.Option(int), reset_target : discord.Opt
 
 @bot.command(description="Upscale to max targetted image (should be already upscaled using mj_upscale)")
 async def mj_upscale_to_max(ctx):
-    if Globals.targetID == "":
+    if Globals.targetID.get(ctx.author.id) is None:
         await ctx.respond(
             'You did not set target. To do so reply to targeted message with "$mj_target"'
         )
@@ -66,8 +66,8 @@ async def mj_upscale_to_max(ctx):
     if (Globals.USE_MESSAGED_CHANNEL):
         Globals.CHANNEL_ID = ctx.channel.id
 
-    response = MaxUpscale(Globals.targetID, Globals.targetHash)
-    Globals.targetID = ""
+    response = MaxUpscale(Globals.targetID.get(ctx.author.id), Globals.targetHash.get(ctx.author.id))
+    Globals.targetID.pop(ctx.author.id)
     if response.status_code >= 400:
         await ctx.respond("Request has failed; please try later")
         return
@@ -80,7 +80,7 @@ async def mj_variation(ctx, index: discord.Option(int), reset_target : discord.O
         await ctx.respond("Invalid argument, pick from 1 to 4")
         return
 
-    if Globals.targetID == "":
+    if Globals.targetID.get(ctx.author.id) is None:
         await ctx.respond(
             'You did not set target. To do so reply to targeted message with "$mj_target"'
         )
@@ -90,9 +90,9 @@ async def mj_variation(ctx, index: discord.Option(int), reset_target : discord.O
     if (Globals.USE_MESSAGED_CHANNEL):
         Globals.CHANNEL_ID = ctx.channel.id
         
-    response = Variation(index, Globals.targetID, Globals.targetHash)
+    response = Variation(index, Globals.targetID.get(ctx.author.id), Globals.targetHash.get(ctx.author.id))
     if reset_target:
-        Globals.targetID = ""
+        Globals.targetID.pop(ctx.author.id)
     if response.status_code >= 400:
         await ctx.respond("Request has failed; please try later")
         return
@@ -106,9 +106,9 @@ async def on_message(message):
     if message.content == "": return
     if "$mj_target" in message.content and message.content[0] == '$':
         try:
-            Globals.targetID = str(message.reference.message_id)
+            Globals.targetID[message.author.id] = str(message.reference.message_id)
 	    #Get the hash from the url
-            Globals.targetHash = str((message.reference.resolved.attachments[0].url.split("_")[-1]).split(".")[0])
+            Globals.targetHash[message.author.id] = str((message.reference.resolved.attachments[0].url.split("_")[-1]).split(".")[0])
         except:
             await message.channel.send(
                 "Exception has occured, maybe you didn't reply to MidJourney message"
